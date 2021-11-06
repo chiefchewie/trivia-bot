@@ -1,6 +1,12 @@
 import { MessageEmbed } from "discord.js";
 import { GoogleSpreadsheet, GoogleSpreadsheetRow } from "google-spreadsheet";
 import _ from "lodash";
+export interface TriviaQuestion {
+    question: string;
+    answer: string;
+    difficulty: string;
+    topic: string;
+}
 export class QuestionSpreadsheet {
     id: string;
     client_email: string;
@@ -29,16 +35,19 @@ export class QuestionSpreadsheet {
         await this.doc.loadInfo();
 
         const senior_questions = this.doc.sheetsByTitle["Senior Questions"];
-        const questions = _.sampleSize(await senior_questions.getRows(), count);
-        const embeds: MessageEmbed[] = [];
-        for (const q of questions) {
-            var embed = new MessageEmbed({
-                title: q.question,
-                description: "cheezits"
-            })
-            embeds.push(embed);
+        const spreadsheet_rows = _.sampleSize(await senior_questions.getRows(), count);
+        const all_questions: TriviaQuestion[] = [];
+
+        for (const row of spreadsheet_rows) {
+            const question: TriviaQuestion = {
+                question: row.question,
+                answer: row.answer,
+                difficulty: row.difficulty,
+                topic: row.topic,
+            };
+            all_questions.push(question);
         }
 
-        return embeds;
+        return all_questions;
     }
 }

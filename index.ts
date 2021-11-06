@@ -10,9 +10,7 @@ const client = new DiscordJS.Client({
 
 // Load commands
 const client_commands = new Collection<String, any>();
-const commandFiles = fs
-    .readdirSync("./commands")
-    .filter((file) => file.endsWith(".ts"));
+const commandFiles = fs.readdirSync("./commands").filter((file) => file.endsWith(".ts"));
 
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
@@ -25,6 +23,8 @@ for (const file of commandFiles) {
 client.on("ready", () => {
     console.log("D.Va online!");
 });
+
+var test: number[] = [];
 
 // Handle commands
 client.on("interactionCreate", async (interaction) => {
@@ -40,6 +40,7 @@ client.on("interactionCreate", async (interaction) => {
 
     try {
         await command.execute(interaction);
+        console.log("finished executing command", interaction.commandName);
     } catch (error) {
         console.error(error);
         await interaction.reply({
