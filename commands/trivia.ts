@@ -1,4 +1,4 @@
-import { CommandInteraction, Message, MessageEmbed } from "discord.js";
+import { CommandInteraction, Message, MessageCollector, MessageEmbed } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { QuestionSpreadsheet } from "../spreadsheet";
 import {
@@ -57,10 +57,11 @@ module.exports = {
                 ],
             });
 
-            interaction.channel?.send({ embeds: [embed] });
             const message_filter = (msg: Message) => {
                 return !msg.author.bot && msg.channel.id === interaction.channel?.id;
             };
+
+            await interaction.channel?.send({ embeds: [embed] });
 
             const message_collector = interaction.channel?.createMessageCollector({
                 filter: message_filter,
@@ -76,13 +77,6 @@ module.exports = {
                 }
                 console.log("received");
             });
-
-            // message_collector.on("end", (collected, reason) => {
-            //     if (reason === "time") {
-            //         interaction.channel?.send("Time's up!");
-            //         console.log("time up");
-            //     }
-            // });
 
             await new Promise((resolve) =>
                 message_collector.once("end", async (collected, reason) => {
