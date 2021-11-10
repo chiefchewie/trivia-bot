@@ -21,15 +21,16 @@ module.exports = {
                 .addChoice("sernior", 1)
         ),
     async execute(interaction: CommandInteraction) {
-        const TIME_TO_ANSWER: number = 10;
-        interaction.reply("gotcha... starting a round of trivia");
+        await interaction.reply("gotcha... starting a round of trivia");
         const difficultyChoce = interaction.options.getInteger("difficulty");
+        const TIME_TO_ANSWER: number = 10; // amount of time in seconds to answer each question
         const qs = new QuestionSpreadsheet(
             GOOGLE_SHEET_ID,
             GOOGLE_SERVICE_ACCOUNT_EMAIL,
             GOOGLE_PRIVATE_KEY
         );
         const question = await qs.getSeniorQuestions(3);
+
         for (const q of question) {
             var embed = new MessageEmbed({
                 title: "here's a question for ya :)",
@@ -57,17 +58,21 @@ module.exports = {
                 ],
             });
 
+            await interaction.channel?.send({ embeds: [embed] });
+
+            // this filter will be used to collect messages
+            // if the author isn't a bot and it was sent in the right channel
             const message_filter = (msg: Message) => {
                 return !msg.author.bot && msg.channel.id === interaction.channel?.id;
             };
 
-            await interaction.channel?.send({ embeds: [embed] });
-
+            // this message collector will use the above filter to collect messages
             const message_collector = interaction.channel?.createMessageCollector({
                 filter: message_filter,
                 time: TIME_TO_ANSWER * 1000,
             })!;
 
+            // event - when a message is collected
             message_collector.on("collect", async (msg) => {
                 if (msg.content === q.answer) {
                     msg.channel.send(`correct! points go to ${msg.author}`);
@@ -75,14 +80,15 @@ module.exports = {
                 } else {
                     msg.channel.send("incorrect!");
                 }
-                console.log("received");
             });
 
+            // event - when the message collector finishes
             await new Promise((resolve) =>
                 message_collector.once("end", async (collected, reason) => {
                     if (reason === "time") {
-                        interaction.channel?.send(`Time's up! The correct answer was \"${q.answer}\"`);
-                        console.log("time up");
+                        interaction.channel?.send(
+                            `Time's up! The correct answer was \"${q.answer}\"`
+                        );
                     }
                     resolve(reason);
                 })

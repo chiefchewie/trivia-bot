@@ -10,7 +10,7 @@ const client = new DiscordJS.Client({
 
 // Load commands
 const client_commands = new Collection<String, any>();
-const commandFiles = fs.readdirSync("./commands").filter((file) => file.endsWith(".ts"));
+const commandFiles = fs.readdirSync("./commands").filter((file) => file.endsWith(".ts")); // if using javascript change this to ".js"
 
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
@@ -20,20 +20,20 @@ for (const file of commandFiles) {
 }
 
 // Do things when client is online
+// Put the bot's activity and status here
 client.on("ready", () => {
     console.log("D.Va online!");
 });
 
-var test: number[] = [];
-
 // Handle commands
 client.on("interactionCreate", async (interaction) => {
+    // return if the interaction isn't a command
     if (!interaction.isCommand()) {
         return;
     }
 
+    // get the relevant command, and return if it doesn't exist
     const command = client_commands.get(interaction.commandName);
-
     if (!command) {
         return;
     }
