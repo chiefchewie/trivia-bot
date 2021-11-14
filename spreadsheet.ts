@@ -1,5 +1,4 @@
-import { MessageEmbed } from "discord.js";
-import { GoogleSpreadsheet, GoogleSpreadsheetRow } from "google-spreadsheet";
+import { GoogleSpreadsheet } from "google-spreadsheet";
 import _ from "lodash";
 export interface TriviaQuestion {
     question: string;

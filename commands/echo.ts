@@ -6,10 +6,7 @@ module.exports = {
         .setName("echo")
         .setDescription("echoes the message")
         .addStringOption((option) =>
-            option
-                .setName("input")
-                .setDescription("The input to echo back")
-                .setRequired(true)
+            option.setName("input").setDescription("The input to echo back").setRequired(true)
         ),
     async execute(interaction: CommandInteraction) {
         const userInput = interaction.options.getString("input")!;

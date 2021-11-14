@@ -15,10 +15,14 @@ module.exports = {
         .addIntegerOption((option) =>
             option
                 .setName("difficulty")
-                .setDescription("junior or senior")
+                .setDescription("Select a difficulty")
                 .setRequired(true)
                 .addChoice("junior", 0)
                 .addChoice("sernior", 1)
+                .addChoice("both", 3)
+        )
+        .addIntegerOption((option) =>
+            option.setName("count").setDescription("How many questions (max 20)").setRequired(true)
         ),
     async execute(interaction: CommandInteraction) {
         await interaction.reply("gotcha... starting a round of trivia");
@@ -29,6 +33,10 @@ module.exports = {
             GOOGLE_SERVICE_ACCOUNT_EMAIL,
             GOOGLE_PRIVATE_KEY
         );
+
+        if (difficultyChoce === 3) {
+        }
+
         const question = await qs.getSeniorQuestions(3);
 
         for (const q of question) {
@@ -58,29 +66,34 @@ module.exports = {
                 ],
             });
 
-            await interaction.channel?.send({ embeds: [embed] });
-
-            // this filter will be used to collect messages
-            // if the author isn't a bot and it was sent in the right channel
+            // this filter will be used to filter messages
             const message_filter = (msg: Message) => {
+                // if the author isn't a bot and it was sent in the right channel
                 return !msg.author.bot && msg.channel.id === interaction.channel?.id;
             };
 
-            // this message collector will use the above filter to collect messages
-            const message_collector = interaction.channel?.createMessageCollector({
-                filter: message_filter,
-                time: TIME_TO_ANSWER * 1000,
-            })!;
+            var message_collector: MessageCollector;
+
+            await interaction.channel?.send({ embeds: [embed] }).then(() => {
+                // this message collector will use the above filter to collect messages
+                message_collector = interaction.channel?.createMessageCollector({
+                    filter: message_filter,
+                    time: TIME_TO_ANSWER * 1000,
+                })!;
+            });
 
             // event - when a message is collected
-            message_collector.on("collect", async (msg) => {
-                if (msg.content === q.answer) {
-                    msg.channel.send(`correct! points go to ${msg.author}`);
-                    message_collector.stop("answered");
-                } else {
-                    msg.channel.send("incorrect!");
-                }
-            });
+            await new Promise((resolve) =>
+                message_collector.on("collect", async (msg) => {
+                    if (msg.content.toLowerCase() === q.answer.toLowerCase()) {
+                        msg.channel.send(`correct! points go to ${msg.author}`);
+                        message_collector.stop("answered");
+                    } else {
+                        msg.channel.send("incorrect!");
+                    }
+                    resolve("done");
+                })
+            );
 
             // event - when the message collector finishes
             await new Promise((resolve) =>
