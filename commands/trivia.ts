@@ -1,12 +1,14 @@
 import { CommandInteraction, Message, MessageCollector, MessageEmbed } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { QuestionSpreadsheet } from "../spreadsheet";
+import { getQuestions, TriviaQuestion } from "../spreadsheet";
 import {
+    GOOGLE_KEYFILE,
     GOOGLE_PRIVATE_KEY,
     GOOGLE_SERVICE_ACCOUNT_EMAIL,
     GOOGLE_SHEET_ID,
     profile_pic_url,
 } from "../config.json";
+import { random } from "lodash";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,28 +20,61 @@ module.exports = {
                 .setDescription("Select a difficulty")
                 .setRequired(true)
                 .addChoice("junior", 0)
-                .addChoice("sernior", 1)
-                .addChoice("both", 3)
+                .addChoice("senior", 1)
+                .addChoice("both", 2)
         )
         .addIntegerOption((option) =>
-            option.setName("count").setDescription("How many questions (max 20)").setRequired(true)
+            option
+                .setName("count")
+                .setDescription("how many questions for this round. default = 5")
+                .setRequired(false)
         ),
     async execute(interaction: CommandInteraction) {
         await interaction.reply("gotcha... starting a round of trivia");
-        const difficultyChoce = interaction.options.getInteger("difficulty");
         const TIME_TO_ANSWER: number = 10; // amount of time in seconds to answer each question
-        const qs = new QuestionSpreadsheet(
-            GOOGLE_SHEET_ID,
-            GOOGLE_SERVICE_ACCOUNT_EMAIL,
-            GOOGLE_PRIVATE_KEY
-        );
+        const difficultyChoice = interaction.options.getInteger("difficulty")!;
+        const questionCount =
+            interaction.options.getInteger("count") !== null
+                ? interaction.options.getInteger("count")!
+                : 5;
 
-        if (difficultyChoce === 3) {
+        var questions: TriviaQuestion[];
+
+        if (difficultyChoice === 2) {
+            // both
+            var j_count = random(0, questionCount);
+            var junior_questions = await getQuestions({
+                difficulty: "Junior",
+                sheet_id: GOOGLE_SHEET_ID,
+                path_to_keyfile: GOOGLE_KEYFILE,
+                question_count: j_count,
+            });
+            var senior_questions = await getQuestions({
+                difficulty: "Senior",
+                sheet_id: GOOGLE_SHEET_ID,
+                path_to_keyfile: GOOGLE_KEYFILE,
+                question_count: questionCount - j_count,
+            });
+            questions = junior_questions.concat(senior_questions);
+        } else if (difficultyChoice == 1) {
+            // senior
+            questions = await getQuestions({
+                difficulty: "Senior",
+                sheet_id: GOOGLE_SHEET_ID,
+                path_to_keyfile: GOOGLE_KEYFILE,
+                question_count: questionCount,
+            });
+        } else {
+            // junior
+            questions = await getQuestions({
+                difficulty: "Junior",
+                sheet_id: GOOGLE_SHEET_ID,
+                path_to_keyfile: GOOGLE_KEYFILE,
+                question_count: questionCount,
+            });
         }
 
-        const question = await qs.getSeniorQuestions(3);
-
-        for (const q of question) {
+        for (const q of questions) {
             var embed = new MessageEmbed({
                 title: "here's a question for ya :)",
                 description: q.question,
@@ -66,34 +101,29 @@ module.exports = {
                 ],
             });
 
+            await interaction.channel?.send({ embeds: [embed] });
+
             // this filter will be used to filter messages
             const message_filter = (msg: Message) => {
                 // if the author isn't a bot and it was sent in the right channel
                 return !msg.author.bot && msg.channel.id === interaction.channel?.id;
             };
 
-            var message_collector: MessageCollector;
-
-            await interaction.channel?.send({ embeds: [embed] }).then(() => {
-                // this message collector will use the above filter to collect messages
-                message_collector = interaction.channel?.createMessageCollector({
-                    filter: message_filter,
-                    time: TIME_TO_ANSWER * 1000,
-                })!;
-            });
+            // this message collector will use the above filter to collect messages
+            const message_collector = interaction.channel?.createMessageCollector({
+                filter: message_filter,
+                time: TIME_TO_ANSWER * 1000,
+            })!;
 
             // event - when a message is collected
-            await new Promise((resolve) =>
-                message_collector.on("collect", async (msg) => {
-                    if (msg.content.toLowerCase() === q.answer.toLowerCase()) {
-                        msg.channel.send(`correct! points go to ${msg.author}`);
-                        message_collector.stop("answered");
-                    } else {
-                        msg.channel.send("incorrect!");
-                    }
-                    resolve("done");
-                })
-            );
+            message_collector.on("collect", async (msg) => {
+                if (msg.content.toLowerCase() === q.answer.toLowerCase()) {
+                    msg.channel.send(`correct! points go to ${msg.author}`);
+                    message_collector.stop("answered");
+                } else {
+                    msg.channel.send("incorrect!");
+                }
+            });
 
             // event - when the message collector finishes
             await new Promise((resolve) =>

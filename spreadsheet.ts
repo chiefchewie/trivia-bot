@@ -1,4 +1,4 @@
-import { GoogleSpreadsheet } from "google-spreadsheet";
+import { google } from "googleapis";
 import _ from "lodash";
 export interface TriviaQuestion {
     question: string;
@@ -6,47 +6,63 @@ export interface TriviaQuestion {
     difficulty: string;
     topic: string;
 }
-export class QuestionSpreadsheet {
-    id: string;
-    client_email: string;
-    private_key: string;
-    doc: GoogleSpreadsheet;
-    constructor(id: string, client_email: string, private_key: string) {
-        this.id = id;
-        this.client_email = client_email;
-        this.private_key = private_key;
-        this.doc = new GoogleSpreadsheet(id);
-        this.init();
-    }
 
-    init() {
-        this.login();
-    }
+export interface GetQuestionOptions {
+    difficulty : "Junior" | "Senior";
+    path_to_keyfile : string;
+    question_count: number;
+    sheet_id : string;
+}
 
-    async login() {
-        await this.doc.useServiceAccountAuth({
-            client_email: this.client_email,
-            private_key: this.private_key,
-        });
-    }
+export interface LeaderBoardOptions {
+    user?: string;
+    path_to_keyfile: string;
+    sheet_id: string;
+    type: "all_time" | "monthly" | "weekly" | "daily";
+}
 
-    async getSeniorQuestions(count: number = 5) {
-        await this.doc.loadInfo();
+export async function getQuestions(
+    options : GetQuestionOptions
+) {
+    const auth = await google.auth.getClient({
+        keyFile: options.path_to_keyfile,
+        scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
 
-        const senior_questions = this.doc.sheetsByTitle["Senior Questions"];
-        const spreadsheet_rows = _.sampleSize(await senior_questions.getRows(), count);
-        const all_questions: TriviaQuestion[] = [];
+    const sheets = google.sheets({ version: "v4", auth: auth });
 
-        for (const row of spreadsheet_rows) {
-            const question: TriviaQuestion = {
-                question: row.question,
-                answer: row.answer,
-                difficulty: row.difficulty,
-                topic: row.topic,
-            };
-            all_questions.push(question);
-        }
+    const rows = await sheets.spreadsheets.values.get({
+        spreadsheetId: options.sheet_id,
+        range: `${options.difficulty} Questions!A2:D`, // every row after row 2, colums A through D
+    });
 
-        return all_questions;
-    }
+    const random_sample = _.sampleSize(rows.data.values, options.question_count);
+    const questions: TriviaQuestion[] = [];
+    random_sample.forEach((row) => {
+        var trivia_question: TriviaQuestion = {
+            question: row[0],
+            answer: row[1],
+            difficulty: row[2],
+            topic: row[3],
+        };
+        questions.push(trivia_question);
+    });
+
+    return questions;
+}
+
+export async function getLeaderboards(options: LeaderBoardOptions) {
+    const auth = await google.auth.getClient({
+        keyFile: options.path_to_keyfile,
+        scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
+
+    const sheets = google.sheets({ version: "v4", auth: auth });
+
+    const rows = await sheets.spreadsheets.values.get({
+        spreadsheetId: options.sheet_id,
+        range: `Users!A2:E`, // every row after row 2, colums A through E10 (grabs top 10 users)
+    });
+
+    const rankings : Object[] = [];
 }
