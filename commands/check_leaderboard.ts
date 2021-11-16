@@ -11,8 +11,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("leaderboards")
         .setDescription("check the leaderboards"),
-    async execute(interaction: CommandInteraction, client: Client ) {
-        await interaction.deferReply()
+    async execute(interaction: CommandInteraction, client: Client) {
+        await interaction.deferReply();
 
         // get records
         const top10 = await getLeaderboards({
@@ -21,11 +21,11 @@ module.exports = {
         });
 
         const embed = new MessageEmbed()
-        .setColor("#0099ff")
-        .setTitle("le leaderboard")
-        .setAuthor("Some name", "https://i.imgur.com/AfFp7pu.png", "https://discord.js.org")
-        .setTimestamp()
-        
+            .setColor("#0099ff")
+            .setTitle("le leaderboard")
+            .setAuthor("Some name", "https://i.imgur.com/AfFp7pu.png", "https://discord.js.org")
+            .setTimestamp();
+
         // add the top ten to the embed
         for (let index = 0; index < top10.length; index++) {
             const user_ranking = top10[index];
@@ -36,6 +36,6 @@ module.exports = {
         }
 
         // finally, send the information to the deferred reply
-        await interaction.editReply({ embeds: [embed]});
+        await interaction.editReply({ embeds: [embed] });
     },
 };

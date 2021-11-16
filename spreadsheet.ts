@@ -61,7 +61,6 @@ export async function getQuestions(options: GetQuestionOptions) {
 }
 
 export async function getLeaderboards(options: SpreadsheetOptions) {
-
     // Log in and authenticate Google API client
     const auth = await google.auth.getClient({
         keyFile: options.path_to_keyfile,
@@ -91,7 +90,6 @@ export async function getLeaderboards(options: SpreadsheetOptions) {
 }
 
 export async function updateLeaderboards(options: LeaderboardOptions) {
-
     // Log in and authenticate Google API client
     const auth = await google.auth.getClient({
         keyFile: options.path_to_keyfile,
@@ -161,7 +159,6 @@ export async function updateLeaderboards(options: LeaderboardOptions) {
 }
 
 export async function getUser(options: LeaderboardOptions) {
-
     // Log in and authenticate Google API client
     const auth = await google.auth.getClient({
         keyFile: options.path_to_keyfile,
