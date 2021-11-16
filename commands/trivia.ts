@@ -1,6 +1,6 @@
 import { CommandInteraction, Message, MessageCollector, MessageEmbed } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { getQuestions, TriviaQuestion } from "../spreadsheet";
+import { getQuestions, TriviaQuestion, updateLeaderboards } from "../spreadsheet";
 import {
     GOOGLE_KEYFILE,
     GOOGLE_PRIVATE_KEY,
@@ -118,7 +118,12 @@ module.exports = {
             // event - when a message is collected
             message_collector.on("collect", async (msg) => {
                 if (msg.content.toLowerCase() === q.answer.toLowerCase()) {
-                    msg.channel.send(`correct! points go to ${msg.author}`);
+                    await msg.channel.send(`correct! points go to ${msg.author}`);
+                    await updateLeaderboards({
+                        path_to_keyfile: GOOGLE_KEYFILE,
+                        sheet_id: GOOGLE_SHEET_ID,
+                        user_id: msg.author.id
+                    })
                     message_collector.stop("answered");
                 } else {
                     msg.channel.send("incorrect!");
