@@ -30,7 +30,7 @@ module.exports = {
                 .setRequired(false)
         ),
     async execute(interaction: CommandInteraction) {
-        await interaction.reply("gotcha... starting a round of trivia");
+        // Constants
         const TIME_TO_ANSWER: number = 10; // amount of time in seconds to answer each question
         const difficultyChoice = interaction.options.getInteger("difficulty")!;
         const questionCount =
@@ -38,6 +38,9 @@ module.exports = {
                 ? interaction.options.getInteger("count")!
                 : 5;
 
+        await interaction.reply("gotcha... starting a round of trivia");
+
+        // Get questions
         var questions: TriviaQuestion[];
 
         if (difficultyChoice === 2) {
@@ -110,6 +113,8 @@ module.exports = {
             };
 
             // this message collector will use the above filter to collect messages
+            // so we can keep collecting messages until
+            // a) the correct answer was sent, or b) time has run out to answer
             const message_collector = interaction.channel?.createMessageCollector({
                 filter: message_filter,
                 time: TIME_TO_ANSWER * 1000,
@@ -117,13 +122,14 @@ module.exports = {
 
             // event - when a message is collected
             message_collector.on("collect", async (msg) => {
+                // check if answer is correct
                 if (msg.content.toLowerCase() === q.answer.toLowerCase()) {
                     await msg.channel.send(`correct! points go to ${msg.author}`);
                     await updateLeaderboards({
                         path_to_keyfile: GOOGLE_KEYFILE,
                         sheet_id: GOOGLE_SHEET_ID,
-                        user_id: msg.author.id
-                    })
+                        user_id: msg.author.id,
+                    });
                     message_collector.stop("answered");
                 } else {
                     msg.channel.send("incorrect!");
@@ -134,9 +140,12 @@ module.exports = {
             await new Promise((resolve) =>
                 message_collector.once("end", async (collected, reason) => {
                     if (reason === "time") {
-                        interaction.channel?.send(
-                            `Time's up! The correct answer was \"${q.answer}\"`
-                        );
+                        const answer_embed = new MessageEmbed()
+                            .setColor("#0099ff")
+                            .setDescription(`Answer: ${q.answer}`);
+                        interaction.channel?.send({
+                            embeds: [answer_embed],
+                        });
                     }
                     resolve(reason);
                 })

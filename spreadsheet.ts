@@ -30,6 +30,7 @@ interface LeaderboardOptions extends SpreadsheetOptions {
 }
 
 export async function getQuestions(options: GetQuestionOptions) {
+    // Log in and authenticate Google API client
     const auth = await google.auth.getClient({
         keyFile: options.path_to_keyfile,
         scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
@@ -37,11 +38,13 @@ export async function getQuestions(options: GetQuestionOptions) {
 
     const sheets = google.sheets({ version: "v4", auth: auth });
 
+    // Get all questions (Columns A to D, skip row 1 the header row)
     const rows = await sheets.spreadsheets.values.get({
         spreadsheetId: options.sheet_id,
-        range: `${options.difficulty} Questions!A2:D`, // every row after row 2, colums A through D
+        range: `${options.difficulty} Questions!A2:D`,
     });
 
+    // Sample random questions and return them
     const random_sample = _.sampleSize(rows.data.values, options.question_count);
     const questions: TriviaQuestion[] = [];
     random_sample.forEach((row) => {
@@ -58,6 +61,8 @@ export async function getQuestions(options: GetQuestionOptions) {
 }
 
 export async function getLeaderboards(options: SpreadsheetOptions) {
+
+    // Log in and authenticate Google API client
     const auth = await google.auth.getClient({
         keyFile: options.path_to_keyfile,
         scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
@@ -65,9 +70,10 @@ export async function getLeaderboards(options: SpreadsheetOptions) {
 
     const sheets = google.sheets({ version: "v4", auth: auth });
 
+    // Get top 10 users (skip header row, columns A2 to E10 )
     const rows = await sheets.spreadsheets.values.get({
         spreadsheetId: options.sheet_id,
-        range: `Users!A2:E`, // every row after row 2, colums A through E10 (grabs top 10 users)
+        range: `Users!A2:E`,
     });
 
     const rankings: UserRanking[] = [];
@@ -85,6 +91,8 @@ export async function getLeaderboards(options: SpreadsheetOptions) {
 }
 
 export async function updateLeaderboards(options: LeaderboardOptions) {
+
+    // Log in and authenticate Google API client
     const auth = await google.auth.getClient({
         keyFile: options.path_to_keyfile,
         scopes: ["https://www.googleapis.com/auth/spreadsheets"],
@@ -92,6 +100,7 @@ export async function updateLeaderboards(options: LeaderboardOptions) {
 
     const sheets = google.sheets({ version: "v4", auth: auth });
 
+    // Store a copy of all records first
     const all_data = await sheets.spreadsheets.values.get({
         spreadsheetId: options.sheet_id,
         range: "Users!A2:E",
@@ -152,6 +161,8 @@ export async function updateLeaderboards(options: LeaderboardOptions) {
 }
 
 export async function getUser(options: LeaderboardOptions) {
+
+    // Log in and authenticate Google API client
     const auth = await google.auth.getClient({
         keyFile: options.path_to_keyfile,
         scopes: ["https://www.googleapis.com/auth/spreadsheets"],
@@ -159,6 +170,7 @@ export async function getUser(options: LeaderboardOptions) {
 
     const sheets = google.sheets({ version: "v4", auth: auth });
 
+    // get a copy of all records first
     const all_data = await sheets.spreadsheets.values.get({
         spreadsheetId: options.sheet_id,
         range: "Users!A2:E",
@@ -189,7 +201,7 @@ export async function getUser(options: LeaderboardOptions) {
 
     if (user_rowNumber === "#N/A") {
         // user not currently in database
-        return `${options.user_id} not in db`;
+        return `${options.user_id} not in db`; //TODO: return an error of sorts that can be handled by bot command
     } else {
         return all_data.data.values![user_rowNumber - 2];
     }
