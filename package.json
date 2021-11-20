@@ -6,10 +6,7 @@
     "scripts": {
         "dev": "nodemon index.ts",
         "refresh commands": "ts-node deploy-commands.ts",
-        "start": "node build/index.js",
-        "build": "tsc",
-        "tsc": "tsc",
-        "postinstall": "npm run build"
+        "start": "ts-node index.ts"
     },
     "keywords": [],
     "author": "",
