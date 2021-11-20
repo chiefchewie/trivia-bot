@@ -1,12 +1,15 @@
 import fs from "fs";
 import DiscordJS, { Collection, Intents } from "discord.js";
 import { google } from "googleapis";
-import { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, DISCORD_TOKEN } from "./config.json";
-
+import { updateCommands } from "./deploy-commands";
+require("dotenv").config();
 // create google api client
-const gsClient = new google.auth.JWT(GOOGLE_SERVICE_ACCOUNT_EMAIL, undefined, GOOGLE_PRIVATE_KEY, [
-    "https://www.googleapis.com/auth/spreadsheets",
-]);
+const gsClient = new google.auth.JWT(
+    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    undefined,
+    process.env.GOOGLE_PRIVATE_KEY,
+    ["https://www.googleapis.com/auth/spreadsheets"]
+);
 
 // Create discord client
 const client = new DiscordJS.Client({
@@ -28,6 +31,7 @@ for (const file of commandFiles) {
 // Put the bot's activity and status here
 client.on("ready", () => {
     console.log("D.Va online!");
+    updateCommands();
 });
 
 // Handle commands
@@ -54,4 +58,4 @@ client.on("interactionCreate", async (interaction) => {
     }
 });
 
-client.login(DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN);

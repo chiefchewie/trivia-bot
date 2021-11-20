@@ -5,7 +5,10 @@
     "main": "index.ts",
     "scripts": {
         "dev": "nodemon index.ts",
-        "refresh commands": "ts-node deploy-commands.ts"
+        "refresh commands": "ts-node deploy-commands.ts",
+        "start": "node build/index.js",
+        "build": "tsc",
+        "postinstall": "npm run build"
     },
     "keywords": [],
     "author": "",

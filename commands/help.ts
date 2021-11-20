@@ -4,7 +4,7 @@
  */
 import { CommandInteraction, MessageEmbed } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { PFP_URL } from "../config.json";
+require("dotenv").config();
 
 module.exports = {
     data: new SlashCommandBuilder().setName("help").setDescription("need help???"),
@@ -12,7 +12,7 @@ module.exports = {
         const embed = new MessageEmbed()
             .setColor("#0099ff")
             .setTitle("using this bot")
-            .setAuthor("rhhstrivia", PFP_URL, "https://www.instagram.com/rhhstrivia/")
+            .setAuthor("rhhstrivia", process.env.PFP_URL, "https://www.instagram.com/rhhstrivia/")
             .setDescription("how to use the commands")
             .setThumbnail(
                 "https://www.pngkey.com/png/full/460-4601531_question-makrs-question-mark-anime-png.png"
