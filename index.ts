@@ -1,15 +1,12 @@
 import fs from "fs";
 import DiscordJS, { Collection, Intents } from "discord.js";
-import { DISCORD_TOKEN } from "./config.json";
 import { google } from "googleapis";
-import * as env from "./config.json";
+import { GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY, DISCORD_TOKEN } from "./config.json";
+
 // create google api client
-const gsClient = new google.auth.JWT(
-    env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    undefined,
-    env.GOOGLE_PRIVATE_KEY,
-    ["https://www.googleapis.com/auth/spreadsheets"]
-);
+const gsClient = new google.auth.JWT(GOOGLE_SERVICE_ACCOUNT_EMAIL, undefined, GOOGLE_PRIVATE_KEY, [
+    "https://www.googleapis.com/auth/spreadsheets",
+]);
 
 // Create discord client
 const client = new DiscordJS.Client({

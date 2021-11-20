@@ -1,10 +1,9 @@
 import { Client, CommandInteraction, Message, MessageCollector, MessageEmbed } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { random } from "lodash";
 import { JWT } from "googleapis-common";
 import { google } from "googleapis";
-import * as env from "../config.json";
 import _ from "lodash";
+import { GOOGLE_SHEET_ID, PFP_URL } from "../config.json";
 
 interface TriviaQuestion {
     question: string;
@@ -26,7 +25,7 @@ async function getQuestions(
 
     // Get all questions (Columns A to D, skip row 1 the header row)
     const rows = await sheetsapi.spreadsheets.values.get({
-        spreadsheetId: env.GOOGLE_SHEET_ID,
+        spreadsheetId: GOOGLE_SHEET_ID,
         range: `${difficulty} Questions!A2:D`,
     });
 
@@ -56,14 +55,14 @@ async function updateLeaderboards(google_auth: JWT, user_id: string) {
 
     // Store a copy of all records first
     const all_data = await sheetsapi.spreadsheets.values.get({
-        spreadsheetId: env.GOOGLE_SHEET_ID,
+        spreadsheetId: GOOGLE_SHEET_ID,
         range: "Users!A2:E",
     });
 
     // use google sheets' MATCH function to find the index of a user
     const search_request = {
         // The ID of the spreadsheet to update.
-        spreadsheetId: env.GOOGLE_SHEET_ID,
+        spreadsheetId: GOOGLE_SHEET_ID,
 
         // The A1 notation of the values to update.
         range: "Users!F1",
@@ -87,7 +86,7 @@ async function updateLeaderboards(google_auth: JWT, user_id: string) {
         // user not currently in database
         // so we need to at them to the database
         const append_request = {
-            spreadsheetId: env.GOOGLE_SHEET_ID,
+            spreadsheetId: GOOGLE_SHEET_ID,
             range: `Users!A:B`,
             valueInputOption: "USER_ENTERED",
             insertDataOption: "INSERT_ROWS",
@@ -102,7 +101,7 @@ async function updateLeaderboards(google_auth: JWT, user_id: string) {
         // first - get their current value
         const score = parseInt(all_data.data.values![user_rowNumber - 2][1]);
         const update_request = {
-            spreadsheetId: env.GOOGLE_SHEET_ID,
+            spreadsheetId: GOOGLE_SHEET_ID,
             range: `Users!B${user_rowNumber}`,
             valueInputOption: "USER_ENTERED",
             resource: {
@@ -159,7 +158,7 @@ module.exports = {
                 author: {
                     name: "rhhstrivia",
                     url: "https://www.instagram.com/rhhstrivia/",
-                    icon_url: env.PFP_URL,
+                    icon_url: PFP_URL,
                 },
                 fields: [
                     {

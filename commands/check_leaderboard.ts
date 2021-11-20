@@ -7,7 +7,7 @@ import { SlashCommandBuilder } from "@discordjs/builders";
 import { google } from "googleapis";
 import { JWT } from "googleapis-common";
 import _ from "lodash";
-import * as env from "../config.json";
+import { GOOGLE_SHEET_ID } from "../config.json";
 
 interface UserRanking {
     uid: string;
@@ -26,7 +26,7 @@ async function getLeaderboards(google_auth: JWT) {
 
     // Get top 10 users (skip header row, columns A2 to E10 )
     const rows = await sheetsapi.spreadsheets.values.get({
-        spreadsheetId: env.GOOGLE_SHEET_ID,
+        spreadsheetId: GOOGLE_SHEET_ID,
         range: `Users!A2:E`,
     });
 
