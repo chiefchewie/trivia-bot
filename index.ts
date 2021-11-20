@@ -1,9 +1,17 @@
 import fs from "fs";
 import DiscordJS, { Collection, Intents } from "discord.js";
-import dotenv from "dotenv";
-dotenv.config();
+import { DISCORD_TOKEN } from "./config.json";
+import { google } from "googleapis";
+import * as env from "./config.json";
+// create google api client
+const gsClient = new google.auth.JWT(
+    env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    undefined,
+    env.GOOGLE_PRIVATE_KEY,
+    ["https://www.googleapis.com/auth/spreadsheets"]
+);
 
-// Create client
+// Create discord client
 const client = new DiscordJS.Client({
     intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES],
 });
@@ -39,7 +47,7 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     try {
-        await command.execute(interaction, client);
+        await command.execute(interaction, client, gsClient);
         console.log("finished executing command", interaction.commandName);
     } catch (error) {
         console.error(error);
@@ -50,4 +58,4 @@ client.on("interactionCreate", async (interaction) => {
     }
 });
 
-client.login(process.env.TOKEN);
+client.login(DISCORD_TOKEN);

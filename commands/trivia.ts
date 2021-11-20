@@ -1,14 +1,118 @@
-import { CommandInteraction, Message, MessageCollector, MessageEmbed } from "discord.js";
+import { Client, CommandInteraction, Message, MessageCollector, MessageEmbed } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { getQuestions, TriviaQuestion, updateLeaderboards } from "../spreadsheet";
-import {
-    GOOGLE_KEYFILE,
-    GOOGLE_PRIVATE_KEY,
-    GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    GOOGLE_SHEET_ID,
-    profile_pic_url,
-} from "../config.json";
 import { random } from "lodash";
+import { JWT } from "googleapis-common";
+import { google } from "googleapis";
+import * as env from "../config.json";
+import _ from "lodash";
+
+interface TriviaQuestion {
+    question: string;
+    answer: string;
+    difficulty: string;
+    topic: string;
+}
+
+async function getQuestions(
+    google_auth: JWT,
+    difficulty: "Junior" | "Senior",
+    question_count: number
+) {
+    const client = google_auth;
+    const sheetsapi = google.sheets({
+        version: "v4",
+        auth: client,
+    });
+
+    // Get all questions (Columns A to D, skip row 1 the header row)
+    const rows = await sheetsapi.spreadsheets.values.get({
+        spreadsheetId: env.GOOGLE_SHEET_ID,
+        range: `${difficulty} Questions!A2:D`,
+    });
+
+    // Sample random questions and return them
+    const random_sample = _.sampleSize(rows.data.values, question_count);
+    const questions: TriviaQuestion[] = [];
+    random_sample.forEach((row) => {
+        var trivia_question: TriviaQuestion = {
+            question: row[0],
+            answer: row[1],
+            difficulty: row[2],
+            topic: row[3],
+        };
+        questions.push(trivia_question);
+    });
+
+    return questions;
+}
+
+async function updateLeaderboards(google_auth: JWT, user_id: string) {
+    // Log in and authenticate Google API client
+    const client = google_auth;
+    const sheetsapi = google.sheets({
+        version: "v4",
+        auth: client,
+    });
+
+    // Store a copy of all records first
+    const all_data = await sheetsapi.spreadsheets.values.get({
+        spreadsheetId: env.GOOGLE_SHEET_ID,
+        range: "Users!A2:E",
+    });
+
+    // use google sheets' MATCH function to find the index of a user
+    const search_request = {
+        // The ID of the spreadsheet to update.
+        spreadsheetId: env.GOOGLE_SHEET_ID,
+
+        // The A1 notation of the values to update.
+        range: "Users!F1",
+
+        // How the input data should be interpreted.
+        valueInputOption: "USER_ENTERED",
+
+        includeValuesInResponse: true,
+
+        resource: {
+            values: [[`=MATCH(\"${user_id}\", A:A, 0)`]],
+        },
+
+        auth: client,
+    };
+    const response = (await sheetsapi.spreadsheets.values.update(search_request)).data;
+
+    const user_rowNumber = response.updatedData?.values![0][0];
+
+    if (user_rowNumber === "#N/A") {
+        // user not currently in database
+        // so we need to at them to the database
+        const append_request = {
+            spreadsheetId: env.GOOGLE_SHEET_ID,
+            range: `Users!A:B`,
+            valueInputOption: "USER_ENTERED",
+            insertDataOption: "INSERT_ROWS",
+            resource: {
+                values: [[user_id, 10]], // 10 is value per question
+            },
+        };
+        await sheetsapi.spreadsheets.values.append(append_request);
+    } else {
+        // user already in database
+        // so we need to update their values
+        // first - get their current value
+        const score = parseInt(all_data.data.values![user_rowNumber - 2][1]);
+        const update_request = {
+            spreadsheetId: env.GOOGLE_SHEET_ID,
+            range: `Users!B${user_rowNumber}`,
+            valueInputOption: "USER_ENTERED",
+            resource: {
+                range: `Users!B${user_rowNumber}`,
+                values: [[score + 10]],
+            },
+        };
+        await sheetsapi.spreadsheets.values.update(update_request);
+    }
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,7 +125,6 @@ module.exports = {
                 .setRequired(true)
                 .addChoice("junior", 0)
                 .addChoice("senior", 1)
-                .addChoice("both", 2)
         )
         .addIntegerOption((option) =>
             option
@@ -29,7 +132,7 @@ module.exports = {
                 .setDescription("how many questions for this round. default = 5")
                 .setRequired(false)
         ),
-    async execute(interaction: CommandInteraction) {
+    async execute(interaction: CommandInteraction, bot_client: Client, gs_client: JWT) {
         // Constants
         const TIME_TO_ANSWER: number = 10; // amount of time in seconds to answer each question
         const difficultyChoice = interaction.options.getInteger("difficulty")!;
@@ -43,38 +146,12 @@ module.exports = {
         // Get questions
         var questions: TriviaQuestion[];
 
-        if (difficultyChoice === 2) {
-            // both
-            var j_count = random(0, questionCount);
-            var junior_questions = await getQuestions({
-                difficulty: "Junior",
-                sheet_id: GOOGLE_SHEET_ID,
-                path_to_keyfile: GOOGLE_KEYFILE,
-                question_count: j_count,
-            });
-            var senior_questions = await getQuestions({
-                difficulty: "Senior",
-                sheet_id: GOOGLE_SHEET_ID,
-                path_to_keyfile: GOOGLE_KEYFILE,
-                question_count: questionCount - j_count,
-            });
-            questions = junior_questions.concat(senior_questions);
-        } else if (difficultyChoice == 1) {
+        if (difficultyChoice === 1) {
             // senior
-            questions = await getQuestions({
-                difficulty: "Senior",
-                sheet_id: GOOGLE_SHEET_ID,
-                path_to_keyfile: GOOGLE_KEYFILE,
-                question_count: questionCount,
-            });
+            questions = await getQuestions(gs_client, "Senior", questionCount);
         } else {
             // junior
-            questions = await getQuestions({
-                difficulty: "Junior",
-                sheet_id: GOOGLE_SHEET_ID,
-                path_to_keyfile: GOOGLE_KEYFILE,
-                question_count: questionCount,
-            });
+            questions = await getQuestions(gs_client, "Junior", questionCount);
         }
 
         for (const q of questions) {
@@ -88,7 +165,7 @@ module.exports = {
                 author: {
                     name: "rhhstrivia",
                     url: "https://www.instagram.com/rhhstrivia/",
-                    icon_url: profile_pic_url,
+                    icon_url: env.PFP_URL,
                 },
                 fields: [
                     {
@@ -125,11 +202,7 @@ module.exports = {
                 // check if answer is correct
                 if (msg.content.toLowerCase() === q.answer.toLowerCase()) {
                     await msg.channel.send(`correct! points go to ${msg.author}`);
-                    await updateLeaderboards({
-                        path_to_keyfile: GOOGLE_KEYFILE,
-                        sheet_id: GOOGLE_SHEET_ID,
-                        user_id: msg.author.id,
-                    });
+                    await updateLeaderboards(gs_client, msg.author.id);
                     message_collector.stop("answered");
                 } else {
                     msg.channel.send("incorrect!");
