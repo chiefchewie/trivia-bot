@@ -48,7 +48,6 @@ client.on("interactionCreate", async (interaction) => {
 
     try {
         await command.execute(interaction, client, gsClient);
-        console.log("finished executing command", interaction.commandName);
     } catch (error) {
         console.error(error);
         await interaction.reply({

@@ -12,24 +12,23 @@ module.exports = {
         const embed = new MessageEmbed()
             .setColor("#0099ff")
             .setTitle("using this bot")
-            .setAuthor(
-                "rhhstrivia",
-                PFP_URL,
-                "https://www.instagram.com/rhhstrivia/"
-            )
+            .setAuthor("rhhstrivia", PFP_URL, "https://www.instagram.com/rhhstrivia/")
             .setDescription("how to use the commands")
-            .setThumbnail("https://i.imgur.com/AfFp7pu.png")
+            .setThumbnail(
+                "https://www.pngkey.com/png/full/460-4601531_question-makrs-question-mark-anime-png.png"
+            )
             .addFields(
                 { name: "Regular field title", value: "Some value here" },
-                {name: "/help", value: "shows this message"},
-                {name: "/trivia <difficulty> <count=5>", value: "start a round of trivia. select a difficulty and how many questions you want."},
-                {name: "/leaderboards", value: "show the top 10"},
-                { name: "\u200B", value: "\u200B" },
+                { name: "/help", value: "shows this message" },
+                {
+                    name: "/trivia <difficulty> <count=5>",
+                    value: "start a round of trivia. select a difficulty and how many questions you want.",
+                },
+                { name: "/leaderboards", value: "show the top 10" }
+                //{ name: "\u200B", value: "\u200B" },
             )
-            .addField("Inline field title", "Some value here", true)
-            .setImage("https://i.imgur.com/AfFp7pu.png")
             .setTimestamp()
-            .setFooter("Some footer text here", "https://i.imgur.com/AfFp7pu.png");
+            .setFooter("This is a footer.", "https://i.imgur.com/AfFp7pu.png");
 
         await interaction.reply({ embeds: [embed], ephemeral: false });
     },

@@ -118,13 +118,13 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("trivia")
         .setDescription("start a round of trivia")
-        .addIntegerOption((option) =>
+        .addStringOption((option) =>
             option
                 .setName("difficulty")
                 .setDescription("Select a difficulty")
                 .setRequired(true)
-                .addChoice("junior", 0)
-                .addChoice("senior", 1)
+                .addChoice("Junior", "Junior")
+                .addChoice("Senior", "Senior")
         )
         .addIntegerOption((option) =>
             option
@@ -132,10 +132,11 @@ module.exports = {
                 .setDescription("how many questions for this round. default = 5")
                 .setRequired(false)
         ),
+
     async execute(interaction: CommandInteraction, bot_client: Client, gs_client: JWT) {
         // Constants
         const TIME_TO_ANSWER: number = 10; // amount of time in seconds to answer each question
-        const difficultyChoice = interaction.options.getInteger("difficulty")!;
+        const difficultyChoice = <"Junior" | "Senior">interaction.options.getString("difficulty");
         const questionCount =
             interaction.options.getInteger("count") !== null
                 ? interaction.options.getInteger("count")!
@@ -145,14 +146,7 @@ module.exports = {
 
         // Get questions
         var questions: TriviaQuestion[];
-
-        if (difficultyChoice === 1) {
-            // senior
-            questions = await getQuestions(gs_client, "Senior", questionCount);
-        } else {
-            // junior
-            questions = await getQuestions(gs_client, "Junior", questionCount);
-        }
+        questions = await getQuestions(gs_client, difficultyChoice, questionCount);
 
         for (const q of questions) {
             var embed = new MessageEmbed({
