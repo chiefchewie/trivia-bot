@@ -17,7 +17,9 @@ export function updateCommands() {
     const rest = new REST({ version: "9" }).setToken(process.env.DISCORD_TOKEN!);
 
     rest.put(
-        Routes.applicationGuildCommands(process.env.BOT_CLIENT_ID!, process.env.DISCORD_GUILD_ID!),
+        /* Do this for guild commands (testing environment) */
+        // Routes.applicationGuildCommands(process.env.BOT_CLIENT_ID!, process.env.DISCORD_GUILD_ID!),
+        Routes.applicationCommands(process.env.BOT_CLIENT_ID!),
         { body: commands }
     )
         .then(() =>
