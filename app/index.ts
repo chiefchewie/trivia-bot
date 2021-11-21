@@ -1,14 +1,16 @@
 import DiscordJS, { Collection, Intents } from "discord.js";
 import fs from "fs";
 import { google } from "googleapis";
+import _ from "lodash";
 import path from "path";
 import { updateCommands } from "./deploy-commands";
 require("dotenv").config();
+
 // create google api client
 const gsClient = new google.auth.JWT(
     process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     undefined,
-    process.env.GOOGLE_PRIVATE_KEY,
+    _.replace(process.env.GOOGLE_PRIVATE_KEY!, /\\n/g, "\n"),
     ["https://www.googleapis.com/auth/spreadsheets"]
 );
 
