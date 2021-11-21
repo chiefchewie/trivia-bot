@@ -7,15 +7,7 @@ require("dotenv").config();
 export function updateCommands() {
     const commands = [];
     const dir = "./commands";
-    const ts_files = fs
-        .readdirSync(path.resolve(__dirname, dir))
-        .filter((file) => file.endsWith(".ts"));
-
-    const js_files = fs
-        .readdirSync(path.resolve(__dirname, dir))
-        .filter((file) => file.endsWith(".js"));
-
-    const commandFiles = ts_files.concat(js_files);
+    const commandFiles = fs.readdirSync(path.resolve(__dirname, dir));
 
     for (const file of commandFiles) {
         const command = require(`./commands/${file}`);

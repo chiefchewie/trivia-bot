@@ -18,16 +18,10 @@ const client = new DiscordJS.Client({
 });
 
 const dir = "./commands";
-const ts_files = fs
-    .readdirSync(path.resolve(__dirname, dir))
-    .filter((file) => file.endsWith(".ts"));
 
-const js_files = fs
-    .readdirSync(path.resolve(__dirname, dir))
-    .filter((file) => file.endsWith(".js"));
+const commandFiles = fs.readdirSync(path.resolve(__dirname, dir));
 
 const client_commands = new Collection<String, any>();
-const commandFiles = ts_files.concat(js_files);
 
 for (const file of commandFiles) {
     const command = require(`./commands/${file}`);
